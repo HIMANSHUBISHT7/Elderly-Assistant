@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice AI Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #111;
+            color: white;
+            margin: 0;
+            padding: 0;
+            background-image: radial-gradient(rgba(255, 0, 0, 0.2) 10%, transparent 10%),
+                              radial-gradient(rgba(255, 0, 0, 0.15) 10%, transparent 10%);
+            background-position: 0 0, 25px 25px;
+            background-size: 50px 50px;
+        }
+        
+        .navbar {
+            background: linear-gradient(45deg, #5b2222, #990000);
+            padding: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0px 4px 10px rgba(255, 0, 0, 0.5);
+            animation: glow 1.5s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0px 4px 10px rgba(255, 0, 0, 0.5); }
+            to { box-shadow: 0px 6px 15px rgba(78, 42, 42, 0.8); }
+        }
+        
+        #chat-container {
+            width: 50%;
+            margin: 20px auto;
+            border: 2px solid #4d2929;
+            padding: 15px;
+            border-radius: 15px;
+            background-color: #222;
+            height: 350px;
+            overflow-y: auto;
+            box-shadow: 0px 4px 15px rgba(126, 77, 77, 0.7);
+            transition: all 0.3s ease-in-out;
+        }
+        
+        .user, .ai {
+            padding: 12px;
+            margin: 10px;
+            border-radius: 8px;
+            font-size: 18px;
+            text-align: left;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+        .user:hover, .ai:hover {
+            transform: scale(1.08);
+        }
+        
+        .user {
+            background-color: #4c3434;
+            color: white;
+            text-align: right;
+            border-right: 5px solid #573232;
+            animation: fadeInRight 0.5s;
+        }
+        .ai {
+            background-color: #333;
+            color: #ff5555;
+            text-align: left;
+            border-left: 5px solid #a53838;
+            animation: fadeInLeft 0.5s;
+        }
+        
+        @keyframes fadeInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes fadeInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        button {
+            font-size: 18px;
+            padding: 12px 25px;
+            margin-top: 15px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #ff0000, #cc0000);
+            color: white;
+            font-weight: bold;
+            transition: transform 0.3s ease, background 0.3s ease;
+            box-shadow: 0px 4px 15px rgba(255, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button:hover {
+            transform: scale(1.12);
+            background: linear-gradient(45deg, #cc0000, #ff0000);
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+        
+        button::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300%;
+            height: 300%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 10%, rgba(255,255,255,0) 80%);
+            transition: all 0.6s ease;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0);
+        }
+        
+        button:active::before {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">Voice AI Assistant</div>
+    <div id="chat-container"></div>
+    <button onclick="startListening()">🎤 Speak</button>
+    
+    <script>
+        function startListening() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                const text = event.results[0][0].transcript;
+                addChatMessage('user', text);
+
+                fetch('/process_voice', {
+                    method: 'POST',
+                    body: JSON.stringify({ text: text }),
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    addChatMessage('ai', data.response);
+                    speakResponse(data.response);
+                });
+            };
+        }
+
+        function addChatMessage(sender, message) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add(sender);
+            messageElement.innerText = message;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function speakResponse(text) {
+            const speech = new SpeechSynthesisUtterance(text);
+            speech.lang = 'en-US';
+            window.speechSynthesis.speak(speech);
+        }
+    </script>
+</body>
+</html>
